@@ -18,6 +18,7 @@
 package baritone.process;
 
 import baritone.Baritone;
+import baritone.api.BaritoneAPI;
 import baritone.api.pathing.goals.*;
 import baritone.api.process.IMineProcess;
 import baritone.api.process.PathingCommand;
@@ -33,6 +34,7 @@ import baritone.pathing.movement.CalculationContext;
 import baritone.pathing.movement.MovementHelper;
 import baritone.utils.BaritoneProcessHelper;
 import baritone.utils.BlockStateInterface;
+import baritone.utils.pathing.BetterWorldBorder;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockAir;
 import net.minecraft.block.BlockFalling;
@@ -43,6 +45,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
 import java.util.*;
@@ -348,6 +351,16 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
     }
 
     private static List<BlockPos> prune(CalculationContext ctx, List<BlockPos> locs2, List<Block> mining, int max, List<BlockPos> blacklist) {
+
+        BetterWorldBorder restriction;
+        Vec3i restrict1 = BaritoneAPI.getSettings().restrict1.value;
+        Vec3i restrict2 = BaritoneAPI.getSettings().restrict2.value;
+        if( restrict1 != Vec3i.NULL_VECTOR && restrict2 != Vec3i.NULL_VECTOR ) {
+            restriction = new BetterWorldBorder(restrict1, restrict2);
+        } else  {
+            restriction = null;
+        }
+
         List<BlockPos> dropped = droppedItemsScan(mining, ctx.world);
         dropped.removeIf(drop -> {
             for (BlockPos pos : locs2) {
@@ -360,6 +373,8 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
         List<BlockPos> locs = locs2
                 .stream()
                 .distinct()
+
+                .filter( pos -> !restricted( restriction, pos ) )
 
                 // remove any that are within loaded chunks that aren't actually what we want
                 .filter(pos -> !ctx.bsi.worldContainsLoadedChunk(pos.getX(), pos.getZ()) || mining.contains(ctx.getBlock(pos.getX(), pos.getY(), pos.getZ())) || dropped.contains(pos))
@@ -376,6 +391,13 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
             return locs.subList(0, max);
         }
         return locs;
+    }
+
+    private static boolean restricted( BetterWorldBorder restriction, BlockPos pos ){
+
+        boolean result = restriction != null && !restriction.containsXZ( pos );
+        System.err.println( restriction + " // " + pos + ": " + result );
+        return result;
     }
 
     public static boolean plausibleToBreak(CalculationContext ctx, BlockPos pos) {

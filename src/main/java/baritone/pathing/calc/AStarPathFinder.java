@@ -18,6 +18,7 @@
 package baritone.pathing.calc;
 
 import baritone.Baritone;
+import baritone.api.BaritoneAPI;
 import baritone.api.pathing.calc.IPath;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.pathing.movement.ActionCosts;
@@ -28,6 +29,7 @@ import baritone.pathing.movement.Moves;
 import baritone.utils.pathing.BetterWorldBorder;
 import baritone.utils.pathing.Favoring;
 import baritone.utils.pathing.MutableMoveResult;
+import net.minecraft.util.math.Vec3i;
 
 import java.util.Optional;
 
@@ -49,6 +51,7 @@ public final class AStarPathFinder extends AbstractNodeCostSearch {
 
     @Override
     protected Optional<IPath> calculate0(long primaryTimeout, long failureTimeout) {
+
         startNode = getNodeAtPosition(startX, startY, startZ, BetterBlockPos.longHash(startX, startY, startZ));
         startNode.cost = 0;
         startNode.combinedCost = startNode.estimatedCostToGoal;
@@ -60,7 +63,24 @@ public final class AStarPathFinder extends AbstractNodeCostSearch {
             bestSoFar[i] = startNode;
         }
         MutableMoveResult res = new MutableMoveResult();
-        BetterWorldBorder worldBorder = new BetterWorldBorder(calcContext.world.getWorldBorder());
+
+        /*
+        Vec3i restrict1 = BaritoneAPI.getSettings().restrict1.value;
+        Vec3i restrict2 = BaritoneAPI.getSettings().restrict2.value;
+        */
+
+        BetterWorldBorder worldBorder;
+        /*
+        if( Vec3i.NULL_VECTOR != restrict1 && Vec3i.NULL_VECTOR != restrict2 ) {
+
+            worldBorder = new BetterWorldBorder( restrict1, restrict2 );
+        } else {
+
+            worldBorder = new BetterWorldBorder(calcContext.world.getWorldBorder());
+        }
+        */
+        worldBorder = new BetterWorldBorder(calcContext.world.getWorldBorder());
+
         long startTime = System.currentTimeMillis();
         boolean slowPath = Baritone.settings().slowPath.value;
         if (slowPath) {

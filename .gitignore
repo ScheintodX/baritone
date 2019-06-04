@@ -4,6 +4,7 @@
 run/
 autotest/
 dist/
+out/
 
 # Gradle
 build/

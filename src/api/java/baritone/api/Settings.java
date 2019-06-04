@@ -674,7 +674,7 @@ public final class Settings {
     /**
      * How far to move before repeating the build. 0 to disable repeating on a certain axis, 0,0,0 to disable entirely
      */
-    public final Setting<Vec3i> buildRepeat = new Setting<>(new Vec3i(0, 0, 0));
+    public final Setting<Vec3i> buildRepeat = new Setting<>( Vec3i.NULL_VECTOR );
 
     /**
      * Allow standing above a block while mining it, in BuilderProcess
@@ -855,6 +855,15 @@ public final class Settings {
      */
     public final Setting<Color> colorGoalBox = new Setting<>(Color.GREEN);
 
+    /**
+     * First point of restricting box
+     */
+    public final Setting<Vec3i> restrict1 = new Setting<>( Vec3i.NULL_VECTOR );
+
+    /**
+     * Second point of restricting box
+     */
+    public final Setting<Vec3i> restrict2 = new Setting<>( Vec3i.NULL_VECTOR );
 
     /**
      * A map of lowercase setting field names to their respective setting

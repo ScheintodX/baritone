@@ -39,6 +39,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ReportedException;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.chunk.Chunk;
 
 import java.nio.file.Path;
@@ -63,6 +64,7 @@ public class ExampleBaritoneControl implements Helper, AbstractGameEventListener
                     "saveall - (debug) Saves chunk cache\n" +
                     "find - (debug) outputs how many blocks of a certain type are within the cache\n" +
                     "mine - Paths to and mines specified blocks 'mine x_ore y_ore ...'\n" +
+                    "restrict - Restricts Mining operations to the area between here and goal\n" +
                     "thisway - Creates a goal X blocks where you're facing\n" +
                     "list - Lists waypoints under a category\n" +
                     "get - Same as list\n" +
@@ -362,6 +364,55 @@ public class ExampleBaritoneControl implements Helper, AbstractGameEventListener
                 }
             }
             baritone.getBuilderProcess().clearArea(corner1, corner2);
+            return true;
+        }
+
+        // mostly copied from cleararea
+        // restrict mining to a certain area.
+        // Used in MineProcess (but not in AStarPathFinder)
+        // could be added as hard-limit option?
+        if (msg.startsWith("restrict")) {
+            String suffix = msg.substring("restrict".length()).trim();
+            System.err.println( "restrict '" + suffix + "'" );
+            BlockPos corner1 = null;
+            BlockPos corner2 = null;
+            if (suffix.isEmpty()) {
+                // clear the area from the current goal to here
+                Goal goal = baritone.getPathingBehavior().getGoal();
+                if (!(goal instanceof GoalBlock)) {
+                    logDirect("Need to specify goal of opposite corner");
+                    return true;
+                }
+                corner1 = ((GoalBlock) goal).getGoalPos();
+                corner2 = ctx.playerFeet();
+            } else {
+                if( "off".equals( suffix ) ){
+                    BaritoneAPI.getSettings().restrict1.value = Vec3i.NULL_VECTOR;
+                    BaritoneAPI.getSettings().restrict2.value = Vec3i.NULL_VECTOR;
+                    logDirect("Restriction is off");
+                    return true;
+
+                } else try {
+                    String[] spl = suffix.split(" ");
+                    corner1 = ctx.playerFeet();
+                    corner2 = new BlockPos(Integer.parseInt(spl[0]), Integer.parseInt(spl[1]), Integer.parseInt(spl[2]));
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException | NullPointerException ex) {
+                    logDirect("unable to parse");
+                    return true;
+                }
+            }
+
+            if( corner1 != null && corner2 != null ) {
+                BaritoneAPI.getSettings().restrict1.value = corner1;
+                BaritoneAPI.getSettings().restrict2.value = corner2;
+            }
+
+            // cleanup
+            baritone.getCustomGoalProcess().setGoal( null );
+
+            //aye
+            logDirect( "Restricted to: " + BaritoneAPI.getSettings().restrict1 + "/" + BaritoneAPI.getSettings().restrict2 + " (but only X/Z)" );
+
             return true;
         }
         if (msg.equals("resume")) {
