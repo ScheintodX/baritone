@@ -18,9 +18,12 @@
 package baritone.utils;
 
 import baritone.Baritone;
+import baritone.api.BaritoneAPI;
+import baritone.api.Settings;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
@@ -72,6 +75,7 @@ public class ToolSet {
      */
     public double getStrVsBlock(IBlockState state) {
         return breakStrengthCache.computeIfAbsent(state.getBlock(), backendCalculation);
+        //return backendCalculation.apply( state.getBlock() );
     }
 
     /**
@@ -97,26 +101,79 @@ public class ToolSet {
      * @return A byte containing the index in the tools array that worked best
      */
     public byte getBestSlot(Block b) {
+
+        Settings settings = BaritoneAPI.getSettings();
+        boolean cheap = settings.eco.value;
+
+        if( settings.useMending.value && settings.useMendingOn.value.contains(b) ) return getEnchantedSlotFor( b, Enchantments.MENDING );
+        else if( settings.useSilkTouch.value && settings.useSilkTouchOn.value.contains(b)) return getEnchantedSlotFor( b, Enchantments.SILK_TOUCH );
+        else if( settings.useFortune.value && settings.useFortuneOn.value.contains(b)) return getEnchantedSlotFor( b, Enchantments.FORTUNE );
+
+        return getFastestSlotFor(b, cheap);
+    }
+
+    public byte getFastestSlotFor(Block b, boolean cheap){
         byte best = 0;
         double value = Double.NEGATIVE_INFINITY;
         int materialCost = Integer.MIN_VALUE;
+        int enchantmentCost = Integer.MAX_VALUE;
         IBlockState blockState = b.getDefaultState();
         for (byte i = 0; i < 9; i++) {
             ItemStack itemStack = player.inventory.getStackInSlot(i);
-            double v = calculateSpeedVsBlock(itemStack, blockState);
+            double v = calculateSpeedVsBlock(itemStack, blockState, !cheap );
             if (v > value) {
                 value = v;
                 best = i;
                 materialCost = getMaterialCost(itemStack);
+                if( cheap ) enchantmentCost = calculateEnchantmentCost( itemStack );
             } else if (v == value) {
                 int c = getMaterialCost(itemStack);
                 if (c < materialCost) {
                     value = v;
                     best = i;
                     materialCost = c;
+                    if( cheap ) materialCost = getMaterialCost(itemStack);
+                } else if( cheap && c == materialCost ) {
+                    int x = calculateEnchantmentCost( itemStack );
+                    if( x < enchantmentCost ) {
+                        value = v;
+                        best = i;
+                        enchantmentCost = x;
+                    }
+
                 }
             }
         }
+        return best;
+    }
+
+    public byte getEnchantedSlotFor(Block b, net.minecraft.enchantment.Enchantment enchantment ){
+
+        System.err.println( "SILK" );
+
+        byte best = 0;
+        double value = Double.NEGATIVE_INFINITY;
+        IBlockState blockState = b.getDefaultState();
+        int effectLevel = Integer.MIN_VALUE;
+
+        for (byte i = 0; i < 9; i++) {
+            ItemStack itemStack = player.inventory.getStackInSlot(i);
+            double v = calculateSpeedVsBlock(itemStack, blockState, false);
+            if (v > value) {
+                value = v;
+                best = i;
+                effectLevel = EnchantmentHelper.getEnchantmentLevel(enchantment, itemStack);
+            } else if (v == value) {
+
+                int effLevel = EnchantmentHelper.getEnchantmentLevel(enchantment, itemStack);
+                if( effLevel > effectLevel ){
+                    value = v;
+                    best = i;
+                    effectLevel = effLevel;
+                }
+            }
+        }
+
         return best;
     }
 
@@ -126,9 +183,11 @@ public class ToolSet {
      * @param b the blockstate to be mined
      * @return A double containing the destruction ticks with the best tool
      */
-    private double getBestDestructionTime(Block b) {
-        ItemStack stack = player.inventory.getStackInSlot(getBestSlot(b));
-        return calculateSpeedVsBlock(stack, b.getDefaultState()) * avoidanceMultiplier(b);
+    private double getBestDestructionTime(Block b ) {
+
+        byte slot = getBestSlot(b);
+        ItemStack stack = player.inventory.getStackInSlot(slot);
+        return calculateSpeedVsBlock(stack, b.getDefaultState(), true) * avoidanceMultiplier(b);
     }
 
     private double avoidanceMultiplier(Block b) {
@@ -143,14 +202,15 @@ public class ToolSet {
      * @param state the blockstate to be mined
      * @return how long it would take in ticks
      */
-    public static double calculateSpeedVsBlock(ItemStack item, IBlockState state) {
+    public static double calculateSpeedVsBlock(ItemStack item, IBlockState state, boolean honorEfficiency ) {
+
         float hardness = state.getBlockHardness(null, null);
         if (hardness < 0) {
             return -1;
         }
 
         float speed = item.getDestroySpeed(state);
-        if (speed > 1) {
+        if (honorEfficiency && speed > 1) {
             int effLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.EFFICIENCY, item);
             if (effLevel > 0 && !item.isEmpty()) {
                 speed += effLevel * effLevel + 1;
@@ -163,6 +223,11 @@ public class ToolSet {
         } else {
             return speed / 100;
         }
+    }
+
+    public static int calculateEnchantmentCost(ItemStack item) {
+        Map<Enchantment,Integer> enchantments = EnchantmentHelper.getEnchantments( item );
+        return enchantments == null ? 0 : enchantments.size();
     }
 
     /**

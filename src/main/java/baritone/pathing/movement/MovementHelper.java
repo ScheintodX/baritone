@@ -35,6 +35,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.List;
 import java.util.Optional;
 
 import static baritone.pathing.movement.Movement.HORIZONTALS_BUT_ALSO_DOWN____SO_EVERY_DIRECTION_EXCEPT_UP;
@@ -408,7 +409,7 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param ctx The player context
      * @param b   the blockstate to mine
      */
-    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b) {
+    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b ) {
         switchToBestToolFor(ctx, b, new ToolSet(ctx.player()));
     }
 
@@ -419,7 +420,8 @@ public interface MovementHelper extends ActionCosts, Helper {
      * @param b   the blockstate to mine
      * @param ts  previously calculated ToolSet
      */
-    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b, ToolSet ts) {
+    static void switchToBestToolFor(IPlayerContext ctx, IBlockState b, ToolSet ts ) {
+        System.out.println( ctx + "77" + b + "77"+ ts );
         ctx.player().inventory.currentItem = ts.getBestSlot(b.getBlock());
     }
 

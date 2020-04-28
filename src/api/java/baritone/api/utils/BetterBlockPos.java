@@ -50,6 +50,9 @@ public final class BetterBlockPos extends BlockPos {
     public BetterBlockPos(BlockPos pos) {
         this(pos.getX(), pos.getY(), pos.getZ());
     }
+    public BetterBlockPos(Vec3i pos) {
+        this(pos.getX(), pos.getY(), pos.getZ());
+    }
 
     @Override
     public int hashCode() {

@@ -80,6 +80,11 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
     }
 
     @Override
+    public List<Block> getMining(){
+        return mining;
+    }
+
+    @Override
     public PathingCommand onTick(boolean calcFailed, boolean isSafeToCancel) {
         if (desiredQuantity > 0) {
             Item item = mining.get(0).getItemDropped(mining.get(0).getDefaultState(), new Random(), 0);
@@ -395,9 +400,7 @@ public final class MineProcess extends BaritoneProcessHelper implements IMinePro
 
     private static boolean restricted( BetterWorldBorder restriction, BlockPos pos ){
 
-        boolean result = restriction != null && !restriction.containsXZ( pos );
-        System.err.println( restriction + " // " + pos + ": " + result );
-        return result;
+        return restriction != null && !restriction.containsXZ( pos );
     }
 
     public static boolean plausibleToBreak(CalculationContext ctx, BlockPos pos) {

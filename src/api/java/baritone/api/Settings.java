@@ -866,6 +866,49 @@ public final class Settings {
     public final Setting<Vec3i> restrict2 = new Setting<>( Vec3i.NULL_VECTOR );
 
     /**
+     * Determines tool usage while digging
+     * false: Always use the fastest tool
+     * true: Save expensive( having enchantments ) tools for when it's needed
+     */
+    public final Setting<Boolean> eco = new Setting<>( false );
+
+    /**
+     * Use a silktouch tool for mining target blocks.
+     * This is used even if its slower/cheaper then normal tool
+     */
+    public final Setting<Boolean> useSilkTouch = new Setting<Boolean>( false );
+    public final Setting<List<Block>> useSilkTouchOn = new Setting<>( new ArrayList<>( Arrays.asList(
+            Blocks.GLOWSTONE,
+            Blocks.GLASS,
+            Blocks.GLASS_PANE
+    )));
+
+    /**
+     * Use a fortune tool for mining target blocks.
+     * This is used even if its slower/cheaper then normal tool
+     */
+    public final Setting<Boolean> useFortune = new Setting<Boolean>( false );
+    public final Setting<List<Block>> useFortuneOn = new Setting<>( new ArrayList<>( Arrays.asList(
+            Blocks.DIAMOND_ORE,
+            Blocks.EMERALD_ORE,
+            Blocks.COAL_ORE,
+            Blocks.LAPIS_ORE,
+            Blocks.REDSTONE_ORE
+    )));
+
+    /**
+     * Switch to a mending tool when the mined block provided
+     */
+    public final Setting<Boolean> useMending = new Setting<Boolean>( false );
+    public final Setting<List<Block>> useMendingOn = new Setting<>( new ArrayList<>( Arrays.asList(
+            Blocks.DIAMOND_ORE,
+            Blocks.EMERALD_ORE,
+            Blocks.COAL_ORE,
+            Blocks.LAPIS_ORE,
+            Blocks.REDSTONE_ORE
+    )));
+
+    /**
      * A map of lowercase setting field names to their respective setting
      */
     public final Map<String, Setting<?>> byLowerName;

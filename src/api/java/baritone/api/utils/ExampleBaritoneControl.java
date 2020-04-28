@@ -42,6 +42,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.chunk.Chunk;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -401,7 +405,6 @@ public class ExampleBaritoneControl implements Helper, AbstractGameEventListener
                     return true;
                 }
             }
-
             if( corner1 != null && corner2 != null ) {
                 BaritoneAPI.getSettings().restrict1.value = corner1;
                 BaritoneAPI.getSettings().restrict2.value = corner2;
@@ -433,6 +436,7 @@ public class ExampleBaritoneControl implements Helper, AbstractGameEventListener
             logDirect("Baritone settings reset");
             return true;
         }
+
         if (msg.equals("tunnel")) {
             customGoalProcess.setGoalAndPath(new GoalStrictDirection(ctx.playerFeet(), ctx.player().getHorizontalFacing()));
             logDirect("tunneling");

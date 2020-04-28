@@ -19,6 +19,8 @@ package baritone.api.process;
 
 import net.minecraft.block.Block;
 
+import java.util.List;
+
 /**
  * @author Brady
  * @since 9/23/2018
@@ -69,4 +71,9 @@ public interface IMineProcess extends IBaritoneProcess {
     default void cancel() {
         onLostControl();
     }
+
+    /**
+     * @return what is currently mined
+     */
+    List<Block> getMining();
 }
