@@ -17,6 +17,18 @@
 
 package baritone.api;
 
+import java.awt.Color;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+
 import baritone.api.utils.SettingsUtil;
 import baritone.api.utils.TypeUtils;
 import net.minecraft.block.Block;
@@ -25,14 +37,6 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.ITextComponent;
-
-import java.awt.*;
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.*;
-import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Baritone's settings. Settings apply to all Baritone instances.
@@ -1016,6 +1020,30 @@ public final class Settings {
      */
     public final Setting<Boolean> renderSelectionCorners = new Setting<>(true);
 
+    /**
+     * Use a silktouch tool for mining target blocks.
+     * This is used even if its slower/cheaper then normal tool
+     */
+    public final Setting<Boolean> useSilkTouch = new Setting<>( false );
+    public final Setting<List<Block>> useSilkTouchOn = new Setting<>( new ArrayList<>( Arrays.asList(
+            Blocks.GLOWSTONE,
+            Blocks.GLASS,
+            Blocks.GLASS_PANE,
+            Blocks.ENDER_CHEST
+    )));
+
+    /**
+     * Use a fortune tool for mining target blocks.
+     * This is used even if its slower/cheaper then normal tool
+     */
+    public final Setting<Boolean> useFortune = new Setting<>( false );
+    public final Setting<List<Block>> useFortuneOn = new Setting<>( new ArrayList<>( Arrays.asList(
+            Blocks.DIAMOND_ORE,
+            Blocks.EMERALD_ORE,
+            Blocks.COAL_ORE,
+            Blocks.LAPIS_ORE,
+            Blocks.REDSTONE_ORE
+    )));
 
     /**
      * A map of lowercase setting field names to their respective setting

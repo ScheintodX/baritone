@@ -17,7 +17,12 @@
 
 package baritone.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
 import baritone.Baritone;
+import baritone.api.Settings;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -27,10 +32,6 @@ import net.minecraft.init.MobEffects;
 import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemTool;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
 
 /**
  * A cached list of the best tools on the hotbar for any block
@@ -94,6 +95,9 @@ public class ToolSet {
     public boolean hasSilkTouch(ItemStack stack) {
         return EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) > 0;
     }
+    public int getFortune(ItemStack stack) {
+        return EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, stack);
+    }
 
     /**
      * Calculate which tool on the hotbar is best for mining
@@ -101,25 +105,40 @@ public class ToolSet {
      * @param b the blockstate to be mined
      * @return An int containing the index in the tools array that worked best
      */
-    public int getBestSlot(Block b, boolean preferSilkTouch) {
+    public int getBestSlot(Block b) {
+
+        Settings settings = Baritone.settings();
+
+        boolean preferSilkTouch = settings.preferSilkTouch.value;
+        boolean useSilkTouch = settings.useSilkTouch.value && settings.useSilkTouchOn.value.contains(b);
+        boolean useFortune = settings.useFortune.value && settings.useFortuneOn.value.contains(b);
+
         int best = 0;
         double highestSpeed = Double.NEGATIVE_INFINITY;
         int lowestCost = Integer.MIN_VALUE;
         boolean bestSilkTouch = false;
+        boolean gestFortune = false;
         IBlockState blockState = b.getDefaultState();
         for (int i = 0; i < 9; i++) {
             ItemStack itemStack = player.inventory.getStackInSlot(i);
             double speed = calculateSpeedVsBlock(itemStack, blockState);
-            boolean silkTouch = hasSilkTouch(itemStack);
+            boolean silkTouch = preferSilkTouch && hasSilkTouch(itemStack);
+            int fortune = getFortune(itemStack);
+
             if (speed > highestSpeed) {
+
                 highestSpeed = speed;
                 best = i;
                 lowestCost = getMaterialCost(itemStack);
                 bestSilkTouch = silkTouch;
+
             } else if (speed == highestSpeed) {
+
                 int cost = getMaterialCost(itemStack);
+
                 if ((cost < lowestCost && (silkTouch || !bestSilkTouch)) ||
                         (preferSilkTouch && !bestSilkTouch && silkTouch)) {
+
                     highestSpeed = speed;
                     best = i;
                     lowestCost = cost;
