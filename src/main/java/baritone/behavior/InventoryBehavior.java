@@ -17,6 +17,11 @@
 
 package baritone.behavior;
 
+import java.util.ArrayList;
+import java.util.OptionalInt;
+import java.util.Random;
+import java.util.function.Predicate;
+
 import baritone.Baritone;
 import baritone.api.event.events.TickEvent;
 import baritone.utils.ToolSet;
@@ -25,14 +30,13 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.ClickType;
-import net.minecraft.item.*;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemPickaxe;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemTool;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.NonNullList;
-
-import java.util.ArrayList;
-import java.util.OptionalInt;
-import java.util.Random;
-import java.util.function.Predicate;
 
 public final class InventoryBehavior extends Behavior {
 
@@ -113,7 +117,7 @@ public final class InventoryBehavior extends Behavior {
                 continue;
             }
             if (cla$$.isInstance(stack.getItem())) {
-                double speed = ToolSet.calculateSpeedVsBlock(stack, against.getDefaultState()); // takes into account enchants
+                double speed = ToolSet.calculateSpeedVsBlock(stack, against.getDefaultState(), true); // takes into account enchants
                 if (speed > bestSpeed) {
                     bestSpeed = speed;
                     bestInd = i;

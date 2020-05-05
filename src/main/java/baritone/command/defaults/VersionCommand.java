@@ -17,15 +17,15 @@
 
 package baritone.command.defaults;
 
-import baritone.api.IBaritone;
-import baritone.api.command.Command;
-import baritone.api.command.exception.CommandException;
-import baritone.api.command.exception.CommandInvalidStateException;
-import baritone.api.command.argument.IArgConsumer;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+
+import baritone.api.IBaritone;
+import baritone.api.command.Command;
+import baritone.api.command.argument.IArgConsumer;
+import baritone.api.command.exception.CommandException;
+import baritone.api.command.exception.CommandInvalidStateException;
 
 public class VersionCommand extends Command {
 
@@ -40,7 +40,7 @@ public class VersionCommand extends Command {
         if (version == null) {
             throw new CommandInvalidStateException("Null version (this is normal in a dev environment)");
         } else {
-            logDirect(String.format("You are running Baritone v%s", version));
+            logDirect(String.format("You are running Baritone v%s (+ext/Scheintod/6)", version));
         }
     }
 

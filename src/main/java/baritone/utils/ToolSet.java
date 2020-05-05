@@ -23,9 +23,11 @@ import java.util.function.Function;
 
 import baritone.Baritone;
 import baritone.api.Settings;
+import baritone.api.utils.Helper;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.MobEffects;
@@ -38,7 +40,7 @@ import net.minecraft.item.ItemTool;
  *
  * @author Avery, Brady, leijurv
  */
-public class ToolSet {
+public class ToolSet implements Helper {
 
     /**
      * A cache mapping a {@link Block} to how long it will take to break
@@ -92,38 +94,133 @@ public class ToolSet {
         }
     }
 
-    public boolean hasSilkTouch(ItemStack stack) {
-        return EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) > 0;
+    private static int getSilkTouch(ItemStack stack) {
+        return EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) > 0 ? 1 : 0;
     }
-    public int getFortune(ItemStack stack) {
+    private static int getFortune(ItemStack stack) {
         return EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, stack);
     }
+    public static int calculateEnchantmentCost(ItemStack item) {
+    	    Map<Enchantment,Integer> enchantments = EnchantmentHelper.getEnchantments( item );
+    	    if( enchantments == null ) return 0;
+    	    int result = 0;
+    	    for( Map.Entry<Enchantment,Integer> ench : enchantments.entrySet() ) {
+    	    		result += ench.getValue();
+    	    }
+    	    return result;
+    	}
 
-    /**
-     * Calculate which tool on the hotbar is best for mining
-     *
-     * @param b the blockstate to be mined
-     * @return An int containing the index in the tools array that worked best
-     */
-    public int getBestSlot(Block b) {
+    private final static class StackInfo {
+    		int index = -1;
+    		int silktouch = Integer.MIN_VALUE;
+    		int fortune = Integer.MIN_VALUE;
+    		double speed = Integer.MIN_VALUE;
+    		int cost = Integer.MAX_VALUE;
+    		void clear() {
+    			silktouch = Integer.MIN_VALUE;
+    			fortune = Integer.MIN_VALUE;
+    			speed = Integer.MIN_VALUE;
+    			cost = Integer.MAX_VALUE;
+    		}
+    }
+
+    public int getBestSlot( Block b ) {
 
         Settings settings = Baritone.settings();
 
+        boolean eco = settings.eco.value;
         boolean preferSilkTouch = settings.preferSilkTouch.value;
-        boolean useSilkTouch = settings.useSilkTouch.value && settings.useSilkTouchOn.value.contains(b);
-        boolean useFortune = settings.useFortune.value && settings.useFortuneOn.value.contains(b);
+
+        boolean useSilktouch = settings.useSilkTouch.value && settings.useSilkTouchOn.value.contains(b);
+        boolean useFortune = !useSilktouch && settings.useFortune.value && settings.useFortuneOn.value.contains(b);
+
+        IBlockState blockState = b.getDefaultState();
+        StackInfo best = new StackInfo(),
+        	          cur = new StackInfo(),
+        	          tmp;
+
+        for (byte i = 0; i < 9; i++) {
+
+        		cur.clear();
+
+        		SELECT: { // who says java doesn't has goto?
+
+	            ItemStack stack = player.inventory.getStackInSlot(i);
+
+	            if( useSilktouch || preferSilkTouch )
+	            			cur.silktouch = getSilkTouch( stack );
+
+	        		if( useSilktouch ) {
+	                if( best.silktouch < cur.silktouch ) {
+	                		logDirect( "=silk" );
+	                		break SELECT;
+	                } else if( best.silktouch > cur.silktouch ) {
+	                		logDirect( "!silk" );
+	                		continue;
+	                }
+	        		}
+
+	        		if( useFortune ) {
+	        			cur.fortune = getFortune( stack );
+	        			if( best.fortune < cur.fortune ) {
+	                		logDirect( "=fort" );
+	                		break SELECT;
+	        			} else if( best.fortune > cur.fortune ) {
+	                		logDirect( "!fort" );
+	        				continue;
+	        			}
+	        		}
+
+	            cur.speed = calculateSpeedVsBlock( stack, blockState, !eco );
+	            if( best.speed < cur.speed ) {
+	            		logDirect( "=speed" );
+                		break SELECT;
+	            } else if( best.speed > cur.speed ) {
+	            		logDirect( "!speed" );
+		            	continue;
+	            }
+
+	            cur.cost = getMaterialCost( stack );
+	            if( best.cost > cur.cost ) {
+	            		logDirect( "=cost" );
+	            		break SELECT;
+	            } else if( best.cost < cur.cost ) {
+	            		logDirect( "!cost" );
+	            		continue;
+	            }
+
+	            if( preferSilkTouch ) {
+	            		if( best.silktouch < cur.silktouch ) {
+	            			logDirect( "=silk2" );
+	            			break SELECT; //for symmetry
+	            		} else {
+		            		logDirect( "!silk2" );
+		            		continue;
+	            		}
+	            }
+	        }
+
+        		// only reached by break. Skipped via continue.
+            cur.index = i;
+            tmp = best; // reuse
+            best = cur;
+            cur = tmp;
+        }
+
+        return best.index;
+    }
+
+    public int getFastestSlot(Block b, boolean preferSilkTouch, boolean eco ) {
 
         int best = 0;
         double highestSpeed = Double.NEGATIVE_INFINITY;
         int lowestCost = Integer.MIN_VALUE;
         boolean bestSilkTouch = false;
-        boolean gestFortune = false;
         IBlockState blockState = b.getDefaultState();
         for (int i = 0; i < 9; i++) {
             ItemStack itemStack = player.inventory.getStackInSlot(i);
-            double speed = calculateSpeedVsBlock(itemStack, blockState);
-            boolean silkTouch = preferSilkTouch && hasSilkTouch(itemStack);
-            int fortune = getFortune(itemStack);
+            double speed = calculateSpeedVsBlock(itemStack, blockState, !eco);
+            boolean silkTouch = preferSilkTouch && getSilkTouch(itemStack) > 0;
 
             if (speed > highestSpeed) {
 
@@ -156,8 +253,8 @@ public class ToolSet {
      * @return A double containing the destruction ticks with the best tool
      */
     private double getBestDestructionTime(Block b) {
-        ItemStack stack = player.inventory.getStackInSlot(getBestSlot(b, false));
-        return calculateSpeedVsBlock(stack, b.getDefaultState()) * avoidanceMultiplier(b);
+        ItemStack stack = player.inventory.getStackInSlot(getFastestSlot(b, false, false));
+        return calculateSpeedVsBlock(stack, b.getDefaultState(), true) * avoidanceMultiplier(b);
     }
 
     private double avoidanceMultiplier(Block b) {
@@ -170,16 +267,19 @@ public class ToolSet {
      *
      * @param item  the item to mine it with
      * @param state the blockstate to be mined
+     * @param considerEfficiency take efficiency into consideration
      * @return how long it would take in ticks
      */
-    public static double calculateSpeedVsBlock(ItemStack item, IBlockState state) {
+    public static double calculateSpeedVsBlock(ItemStack item, IBlockState state,
+    			boolean considerEfficiency) {
+
         float hardness = state.getBlockHardness(null, null);
         if (hardness < 0) {
             return -1;
         }
 
         float speed = item.getDestroySpeed(state);
-        if (speed > 1) {
+        if (speed > 1 && considerEfficiency) {
             int effLevel = EnchantmentHelper.getEnchantmentLevel(Enchantments.EFFICIENCY, item);
             if (effLevel > 0 && !item.isEmpty()) {
                 speed += effLevel * effLevel + 1;

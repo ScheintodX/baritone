@@ -1020,9 +1020,19 @@ public final class Settings {
      */
     public final Setting<Boolean> renderSelectionCorners = new Setting<>(true);
 
+
+    /**
+     * Turn on eco settings
+     * Eco mode tries to save on tools with expensive enchantments.
+     * But it does not count efficiency as expensive.
+     *
+     * So turning on eco would prefer effII over effIV+SILKTOUCH
+     */
+    public final Setting<Boolean> eco = new Setting<>( false );
+
     /**
      * Use a silktouch tool for mining target blocks.
-     * This is used even if its slower/cheaper then normal tool
+     * This is used even if its slower/more expensive then normal tool
      */
     public final Setting<Boolean> useSilkTouch = new Setting<>( false );
     public final Setting<List<Block>> useSilkTouchOn = new Setting<>( new ArrayList<>( Arrays.asList(
@@ -1034,7 +1044,7 @@ public final class Settings {
 
     /**
      * Use a fortune tool for mining target blocks.
-     * This is used even if its slower/cheaper then normal tool
+     * This is used even if its slower/more expensive then normal tool
      */
     public final Setting<Boolean> useFortune = new Setting<>( false );
     public final Setting<List<Block>> useFortuneOn = new Setting<>( new ArrayList<>( Arrays.asList(
